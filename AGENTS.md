@@ -16,6 +16,19 @@ bias markers in counseling transcripts. It has two parts:
 Text only and post-session only. It must never be used to evaluate individual
 clinicians or to inform employment or licensure decisions.
 
+## Documents
+Read these before changing code. They are the source of truth; this file points
+to them and does not copy them. If one disagrees with the code, fix the doc in
+the same pull request.
+- `docs/requirements.md`: problem statement, requirements and acceptance
+  criteria, constraints, non-goals, open questions
+- `docs/design.md`: system design, interfaces and contracts, data model,
+  deployment, deferred decisions
+- `docs/risks.md`: the single risk register, external prerequisites, staging
+  and rollback plan
+- `CONTRIBUTING.md`: setup, branching, review, Definition of Done
+- `README.md`: quickstart from a clean clone
+
 ## Stack
 - Frontend: React, Vite, TypeScript
 - Backend: Express 5
@@ -53,7 +66,7 @@ Until then, external AI tools receive only synthetic or expressly approved data.
 ## To be added once code exists
 | Item | Owner | Target |
 |---|---|---|
-| Real test, lint, and typecheck commands (replace assumed `npm` scripts) | Da'meka | Sprint 1 |
+| Lint command (`npm test` and `npm run typecheck` now exist in the scaffold) | Da'meka | Sprint 1 |
 | Directory layout and where the detectors and review UI live | John | Sprint 1 |
 | Database and Drizzle schema conventions | John | Sprint 2 |
 | Annotation labels and bias-category definitions | Whole team, with the partner | Sprint 2 |
