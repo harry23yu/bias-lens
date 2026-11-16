@@ -1,70 +1,315 @@
+
 # Design
 
-Status at Repo Checkpoint 1 (fall week 5): scaffold stage. Everything below is marked **Planned** or **Decided**; nothing is marked built until it is in the code. Update this file in the same PR that changes the system.
+**Status:** Initial prototype planning
+
+This document describes the current intended architecture for Bias Lens. Components are considered planned until implemented and verified in the repository. The document will be updated as technical decisions are finalized and development progresses.
 
 ## Context
 
-Bias Lens is used by clinical supervisors and trainees to review de-identified counseling transcripts. A reviewer uploads a transcript, the system flags spans with a rationale and confidence, and the reviewer accepts, rejects, or annotates each flag. Reviewer judgments become evaluation data.
+Bias Lens is intended to help counselors and clinical supervisors identify potential bias in counseling transcripts.
 
-```
- Reviewer (browser)
-        |
-        v
- React + Vite + TypeScript  -- typed client generated from OpenAPI 3.1 -->  Express 5 REST API
-        |                                                                   |        |
-   Clerk (auth)  <----------------------------------------------------------+        |
-                                                                                     v
-                                                          PostgreSQL (Drizzle)   Detection pipeline
-                                                                                  |-- rule-based baseline
-                                                                                  |-- model-based classifier
-                                                                                        |
-                                                                           provider-agnostic LLM interface
-                                                                                        |
-                                                                           external model provider (TBD)
-```
+The initial focus is **missed opportunity bias**, where a therapist may have overlooked an opportunity to explore, acknowledge, or respond to something relevant in the client's statements.
 
-## Components (Planned)
+The system is intended to support professional reflection rather than make definitive judgments about a therapist's behavior or intentions.
+
+The initial prototype will accept speaker-labeled transcript text, analyze it using an existing language model, and display possible missed opportunities with supporting evidence and explanations.
+
+The goal is to identify statements or exchanges worth reviewing, not to establish that a counselor has necessarily acted incorrectly.
+
+## System Architecture (Planned)
+
+The application will have three main components:
+
+1. **Frontend:** React, Vite, and TypeScript for entering transcripts and displaying results.
+2. **Backend:** Likely FastAPI (Python) for processing requests, managing classification instructions, and communicating with language models.
+3. **LLM integration:** A common interface supporting Anthropic's API and a locally hosted model through LM Studio.
+
+### Proposed Workflow
+
+    User (Browser)
+          |
+          v
+    React + Vite + TypeScript
+          |
+          v
+    FastAPI Backend (Proposed)
+          |
+          v
+    Classification Instructions
+    + Approved Definitions
+    + Examples and Research References
+          |
+          v
+    Model Interface
+          |
+          +---------------------------+
+          |                           |
+          v                           v
+    Anthropic Claude API         Local LLM
+    (Likely hosted option)       (LM Studio)
+          |                           |
+          +-------------+-------------+
+                        |
+                        v
+             Classification Results
+                        |
+                        v
+                 React Frontend
+
+The backend will provide the model with the relevant transcript context and the approved materials used to define missed opportunity bias.
+
+Both model approaches should follow comparable classification instructions and return results in a consistent format.
+
+## Components
 
 | Component | Responsibility | Status |
 |---|---|---|
-| Frontend (React, Vite, TypeScript) | Upload, annotated-span review UI, accept/reject/annotate | Planned |
-| API (Express 5) | Auth check, ingestion, run detection, store and serve flags and reviews | Planned |
-| Detection pipeline | Speaker-turn metrics, rule-based baseline, model-based classifier | Planned |
-| LLM interface | One interface; vendor and model chosen by configuration only | Planned |
-| Evaluation | Per-category precision and recall against held-out labels | Planned |
-| Database (PostgreSQL, Drizzle) | Transcripts, turns, flags, reviews, labels, evaluation runs | Planned |
+| React frontend | Accept transcript text and display analysis | Planned |
+| FastAPI backend | Process requests and communicate with models | Proposed |
+| Bias definitions and reference materials | Provide criteria, examples, and research supporting classification | Initial category identified; materials to be integrated |
+| Classification instructions | Guide models in evaluating potential missed opportunities | Planned |
+| LLM interface | Support local and hosted models | Planned |
+| Anthropic API | Provide access to a hosted Claude model | Likely hosted option |
+| LM Studio | Run an available open-weight model locally | Planned comparison |
+| Results display | Show possible missed opportunities and supporting reasoning | Planned |
+| Evaluation | Compare classifications against advisor-reviewed examples | Planned |
 
-Directory layout and where each component lives: owner John, Sprint 1; this section is updated when the scaffold lands.
+## Transcript Input
 
-## Interfaces and contracts
+The initial application will accept pasted counseling transcripts containing speaker labels.
 
-- **REST API:** described by one OpenAPI 3.1 file; the frontend's typed client is generated from it, never hand-written. Location of the file: TBD with the scaffold.
-- **LLM interface:** a single provider-agnostic interface (for example, "classify these spans given these definitions, return labels, rationale, confidence"). Application logic never names a vendor or model.
-- **Auth:** Clerk issues sessions; the API verifies them on protected routes.
+Example:
 
-## Data model (Planned, draft)
+    Client: I have been feeling disconnected from
+    my family recently.
 
-Entities: `transcript`, `turn` (speaker, text, order), `flag` (turn span, bias category, rationale, confidence, detector), `review` (flag, reviewer, accept/reject/annotation), `label` (human gold label for evaluation), `evaluation_run` (detector, category, precision, recall). Users and sessions live in Clerk. The schema is a draft until John's Sprint 2 schema conventions land; schema changes require review (see risks.md).
+    Therapist: Has your work schedule been stressful?
+
+    Client: Yes, but I think there is more to it.
+
+The model will use the surrounding conversation to evaluate whether the therapist may have missed an opportunity to explore something relevant.
+
+The system should not evaluate therapist statements solely in isolation when the surrounding dialogue is necessary for interpreting them.
+
+The initial version will not require file uploads or additional transcript formats.
+
+## Bias Classification
+
+### Initial Category: Missed Opportunity Bias
+
+The initial version of Bias Lens will focus on missed opportunity bias.
+
+The team intends to provide a definition, examples, applicable criteria, and relevant research materials to guide classification.
+
+These materials will be developed or reviewed with the project advisors.
+
+The model should use this supplied context to determine whether a particular therapist response may represent a missed opportunity.
+
+The exact operational definition and classification criteria will be maintained separately from the application logic.
+
+### Reference Materials
+
+The team plans to provide both models with a common set of reference materials, potentially including:
+
+- An approved definition of missed opportunity bias.
+- Specific criteria used to identify potential missed opportunities.
+- Examples of statements or exchanges that meet the criteria.
+- Examples that do not meet the criteria.
+- Ambiguous examples requiring contextual interpretation.
+- Relevant research findings supporting the classification framework.
+
+Research references should include enough information to identify the source, and the team should keep track of updates to the reference materials.
+
+The initial approach will be to supply relevant reference content directly in the classification instructions or request context.
+
+More advanced retrieval methods may be considered later if the reference collection becomes too large to include directly.
+
+The models should base their classifications on the supplied criteria and references rather than introducing unsupported definitions.
+
+### Classification Behavior
+
+The application should distinguish between identifying a possible missed opportunity and making a confident determination that one occurred.
+
+The models will be instructed to:
+
+- Evaluate therapist responses using the supplied definition and criteria.
+- Consider relevant client statements and surrounding conversation.
+- Identify possible missed opportunities with supporting transcript evidence.
+- Explain which provided criteria are relevant to the classification.
+- Reference the supplied examples or research where applicable.
+- Avoid assuming therapist intentions or beliefs.
+- Avoid definitive conclusions when the available context is insufficient.
+- Acknowledge ambiguity and alternative interpretations.
+- Avoid inventing supporting evidence or research references.
+
+The system may flag an ambiguous exchange as a **possible missed opportunity** when there is a reasonable basis for review.
+
+However, these cases should be presented with appropriate uncertainty rather than being described as confirmed bias.
+
+When there is no reasonable supporting evidence, the system should not generate a positive classification simply to produce a result.
+
+### Proposed Classification Outcomes
+
+The initial classification system may distinguish among:
+
+1. **Supported potential missed opportunity:** The transcript provides substantial evidence that the exchange meets the supplied criteria.
+2. **Possible missed opportunity:** The exchange raises a plausible concern, but the evidence is ambiguous or incomplete.
+3. **Insufficient evidence:** The available transcript context does not support a meaningful determination.
+4. **No identified missed opportunity:** The exchange does not appear to meet the supplied criteria.
+
+These categories are proposed output states and do not replace the advisor-approved definition of bias.
+
+The exact output labels and thresholds will be finalized during implementation and evaluation.
+
+## Model Integration
+
+The initial implementation will use existing pretrained models rather than fine-tuning a model.
+
+### Hosted Model: Anthropic API
+
+The team will likely use Anthropic's Claude API for the hosted model implementation.
+
+The FastAPI backend will submit transcript text, classification instructions, and the relevant reference materials to the selected Claude model.
+
+The model will return an analysis of potential missed opportunities.
+
+The specific Claude model and API configuration have not yet been selected.
+
+### Local Model: LM Studio
+
+The team also plans to test a freely available open-weight model running through LM Studio.
+
+LM Studio will expose the locally running model through an API that the FastAPI backend can call.
+
+This provides a way to compare local inference against the hosted Claude model using similar input data and classification instructions.
+
+The specific local model will be chosen based on compatibility, available hardware, and preliminary performance.
+
+There is no requirement to fine-tune the local model for the initial prototype.
+
+### Common Model Interface
+
+The backend should use a common classification interface for both model approaches.
+
+This will allow the team to switch between models without changing the frontend.
+
+The team will aim to provide both models with:
+
+- The same transcript text.
+- The same operational definitions.
+- The same examples and research references.
+- Equivalent classification instructions.
+- The same expected output structure.
+
+Some implementation details may vary according to the capabilities of each model provider.
+
+## Classification Output
+
+The initial results should provide enough information for a counselor or supervisor to understand why an exchange was flagged.
+
+The proposed response will include:
+
+- Relevant transcript excerpt or exchange.
+- Classification outcome.
+- Explanation of the possible missed opportunity.
+- Supporting evidence from the transcript.
+- Relevant criteria from the supplied definitions.
+- References to supporting materials when applicable.
+- Explanation of uncertainty or alternative interpretations.
+
+The team plans to use structured JSON responses to simplify communication between the backend and frontend.
+
+The exact JSON schema will be finalized during development.
+
+Any research references returned by the model should be checked against the supplied reference collection before being displayed.
+
+## Evaluation
+
+The team plans to evaluate how effectively local and hosted language models identify potential missed opportunities.
+
+Both models should receive comparable instructions, transcript examples, and reference materials.
+
+Evaluation examples should be reviewed or labeled according to the established criteria, preferably with input from the project advisors.
+
+The evaluation will consider:
+
+- Precision and recall for identifying potential missed opportunities.
+- False-positive and false-negative classifications.
+- Performance on ambiguous examples.
+- Whether explanations reference relevant transcript evidence.
+- Whether classifications follow the supplied criteria.
+- How appropriately the models communicate uncertainty.
+- Consistency across repeated evaluations.
+
+Because the tool is intended to encourage professional review, the team may prioritize identifying plausible missed opportunities while distinguishing less certain cases from strongly supported ones.
+
+The team will need to evaluate whether this approach produces an acceptable number of false positives.
+
+The final comparison method and dataset size have not yet been established.
+
+## Data Storage and Authentication
+
+The first prototype will not require authentication or persistent database storage.
+
+Transcript text will be submitted for analysis and the results displayed in the application.
+
+Persistent transcript records, reviewer feedback, and stored evaluation results may be added in later iterations.
+
+The team will need to confirm privacy requirements before processing real counseling transcripts through external APIs.
 
 ## Deployment
 
-**Production target: not yet agreed.** The walking skeleton must serve requests in the production target by Repo Checkpoint 2 (week 10).
+The production deployment environment has not yet been selected.
 
-- **Where it will run:** TBD with the partner. The partner runs several products in parallel and has prototyped on Replit; whether the team deploys to partner-controlled infrastructure or a team-managed host is undecided.
-- **Who owns the account or infrastructure:** TBD (to be named by the partner).
-- **Who agreed it:** not yet agreed. Justin Jacques (Human Theory Group) is the decision-maker; the Project Manager (John) is raising it. Owner and date to close: see `docs/risks.md`, R-1.
-- **Preview/staging and rollback:** CI builds and tests every PR; until a target exists, changes are exercised locally and on a sprint-end demo build tagged `sprint-N`. Rollback is to revert the offending PR and redeploy the previous tag (see CONTRIBUTING.md). Dates these land: `docs/risks.md`, Staging and rollback plan.
+For local development, the frontend and FastAPI backend may run on a development computer.
 
-## Decisions deferred on purpose
+The application may communicate with either:
 
-- **Model approach** (do nothing, fine-tune an open-weight model, or an existing LLM with structured instructions): deferred until the team's RFC reviews and the annotation guideline give us labels to compare against.
-- **Hosting target:** deferred until the partner confirms accounts and policy.
-- **Bias category list and schema for labels:** deferred until the annotation guideline is written with the partner.
-- **AI tools:** none approved yet; see AGENTS.md.
+- A locally running model through LM Studio.
+- Anthropic's hosted API through an authenticated request.
 
-## Open technical questions
+The project partner has demonstrated a prototype developed through Replit, but its implementation has not yet been reviewed by the team.
 
-1. Transcript input format for the first build (plain text with speaker prefixes, or something else)?
-2. How are model-provider credentials and the business associate agreement handled in a deployed environment?
-3. Does the partner require a particular hosting or CI setup so the product matches their other projects?
-4. How will held-out labels be stored and kept out of training data?
+The team will coordinate with the partner before selecting a deployment environment.
+
+## Decisions Deferred
+
+- Final confirmation of FastAPI as the backend framework.
+- Selection of the specific Claude model.
+- Selection of the local model for LM Studio.
+- Final classification instructions and reference collection.
+- Exact classification output schema.
+- Evaluation dataset and testing procedure.
+- Production hosting environment.
+- Persistent storage and authentication for later versions.
+- Whether fine-tuning or additional detection methods will be necessary.
+
+## Open Technical Questions
+
+1. Which Claude model should be used for the initial hosted implementation?
+2. Which available local model will perform adequately on the team's hardware?
+3. How should the approved definitions, examples, and research be organized and supplied to each model?
+4. How should the model distinguish ambiguous potential missed opportunities from strongly supported ones?
+5. How should the application verify that model explanations accurately reference the supplied materials?
+6. How much transcript context is necessary for reliable classification?
+7. How should the team evaluate false positives and false negatives?
+8. What privacy requirements must be addressed before using external model APIs?
+9. Where will the application eventually be deployed?
+
+## Initial Implementation Priorities
+
+The first implementation will focus on establishing a functional transcript analysis workflow.
+
+1. Set up the React frontend and FastAPI backend.
+2. Create a text input for speaker-labeled transcripts.
+3. Organize the approved missed opportunity bias definitions and reference materials.
+4. Implement a backend endpoint that submits transcript text for analysis.
+5. Connect the backend to the Anthropic API.
+6. Connect the backend to a local model through LM Studio.
+7. Define a common structured classification response.
+8. Display classifications, evidence, explanations, and uncertainty in the frontend.
+9. Test the system with sample transcript exchanges.
+10. Compare the local and hosted model outputs against the established criteria.
+
+This initial implementation will establish the main transcript analysis workflow before adding features such as persistent storage, reviewer feedback, or model fine-tuning.
