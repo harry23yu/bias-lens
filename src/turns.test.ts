@@ -4,8 +4,8 @@ import { splitTurns } from "./turns";
 describe("splitTurns", () => {
   it("splits speaker-prefixed lines into turns", () => {
     expect(splitTurns("Therapist: Hello.\nClient: Hi.")).toEqual([
-      { speaker: "Therapist", text: "Hello." },
-      { speaker: "Client", text: "Hi." },
+      { index: 0, speaker: "Therapist", text: "Hello." },
+      { index: 1, speaker: "Client", text: "Hi." },
     ]);
   });
   it("rejects malformed lines", () => {
