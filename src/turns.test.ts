@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { splitTurns } from "./turns";
 
 describe("splitTurns", () => {
+  it("returns no turns for an empty transcript", () => {
+    expect(splitTurns("")).toEqual([]);
+  });
+
   it("rejects a line whose speaker is empty", () => {
     expect(() => splitTurns(": orphan text")).toThrow("line 1");
   });
