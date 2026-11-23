@@ -1,141 +1,135 @@
-# Bias Lens — CMO model specification: research and implementation brief
+# Bias Lens: CMO Classification Research and Implementation
 
-**Prepared for:** Bias Lens capstone team / counseling advisors  
-**Proposed responsibility:** Classification criteria, prompt design, example annotation, and evaluation  
-**Version:** 0.1, November 2026  
-**Status:** Research-informed working draft; **not advisor approved**. No real transcripts, Claude calls, measurements, or tests are claimed here.
+**Version:** 0.2 — November 2026  
+**Status:** Working draft; classification criteria and example labels await counselor review
 
-## Executive decision summary
+## Overview
 
-The proposed initial strategy is to **use a pretrained model with a versioned, explicit classification specification**, rather than fine-tuning an LLM immediately. Harry can implement the API adapter independently while Jack maintains the model-facing instructions and development cases. Before claiming a working CMO detector, the team needs (1) a counselor-approved operational definition, (2) a coherent result contract, (3) independently reviewed examples, and (4) measured results on held-out cases. These are distinct deliverables, not simply “prompt engineering.”
+Bias Lens will initially use a pretrained language model with written classification criteria and examples, rather than fine-tuning a model. This lets us test and revise the criteria before collecting a substantial labeled dataset. The proposed detector will flag *potential cultural missed opportunities* for review, not determine whether a counselor is biased.
 
-**Recommended next team decision:** Adopt a narrow, *review-oriented* target: “find potential cultural missed opportunities evidenced by a client cue and a therapist response,” not “determine whether a therapist is biased.” Broader physical or personality characteristics need an explicit scope decision, because they may extend beyond the established cultural-missed-opportunities construct.
+The main work still needed is to agree on the scope of a cultural missed opportunity (CMO), connect the instructions to the model interface, and evaluate predictions against independently reviewed examples. The accompanying instruction file and synthetic examples are starting materials, not validated labels.
 
-**What the model can establish:** A particular exchange arguably merits counselor review under predeclared textual criteria.  
-**What the model cannot establish from a transcript alone:** The client's lived perception, the therapist's motives, overall treatment quality, the clinically correct next step, or employment/licensing suitability.
+## 1. Relevant research
 
-## 1. Literature and what it actually supports
+### Cultural missed opportunities
 
-### 1.1 Multicultural Orientation (MCO) framework — directly relevant
+The multicultural orientation (MCO) framework discusses cultural humility, cultural comfort, and cultural opportunities in therapy. Cultural missed opportunities are important to this project, but the published research includes measures of **clients' perceptions** of these experiences [R1, R2]. A classifier working from transcript text alone cannot establish what a client perceived, or why a counselor responded in a particular way.
 
-The multicultural orientation framework distinguishes **cultural humility**, **cultural comfort**, and **cultural opportunities**. An opportunity occurs when culture becomes relevant in treatment and can be discussed; a *missed opportunity* can occur when a therapist does not pursue a culturally meaningful opening. Importantly, a central research tradition measures **client-perceived** missed cultural opportunities. A transcript-only model is therefore detecting a *proxy*, not administering the validated client-report instrument. See Owen et al. (2016) [R1] and the MCO review [R2]. The research does not establish that every topical shift is harmful or that every cultural mention requires a question.
+For this reason, a flag should identify the relevant client statement, the counselor's response, and why the exchange may merit review. The output should not state that the counselor demonstrated bias as an established fact. Nor should a change of topic automatically count as a missed opportunity.
 
-**Design implication:** Include `client_cue_turn_index` and `therapist_response_turn_index`; describe outputs as potential/reviewable missed opportunities; never label the clinician as biased. Keep client feedback or advisor judgment distinct from automatic classifications.
+### Cultural humility and individual context
 
-### 1.2 Cultural humility and identity salience — directly relevant, not a universal rule
+Research on cultural humility and identity salience suggests that the importance of a particular identity depends on the client and the situation [R3, R4]. We should prioritize what the client communicates as meaningful rather than assume that every reference to culture needs further discussion. Likewise, a counselor may respond appropriately through a broader, open-ended question rather than by repeating an identity term.
 
-Cultural humility emphasizes a respectful, other-oriented posture rather than asserting expertise about a person's identity. Relevant findings also suggest **identity salience and intersectionality matter**: cultural identity does not have the same importance for every client at every moment [R3, R4].
+The supplied lecture slides, *Theories: South African, Chinese, Mexican, Filipino Approaches*, are useful background. They distinguish emic and etic approaches and discuss culturally situated views of personality and relationships, including *kapwa* and *pakikiramdam* [R9]. They reinforce a practical caution: our criteria should not impose one preferred communication style or make assumptions about clients based on cultural membership. The slides are not themselves a CMO measure or clinical annotation guideline.
 
-**Design implication:** The model should attend to *what this client explicitly says matters*. A culturally themed statement alone is not sufficient evidence. Conversely, a respectful open-ended invitation may be appropriate even without repeating identity words. These are annotation proposals to validate with advisors; they are not deductions about any actual client's internal state.
+### Using an LLM for text classification
 
-### 1.3 Uploaded cross-cultural personality slides — useful caution, not a CMO measure
+Anthropic's prompting documentation recommends clear instructions, separated reference material, and a defined output format [R5]. Structured outputs can help enforce a response format, but cannot establish that the reasoning or classification is correct [R6]. Studies of LLM-based text classification also suggest that the substance of the coding instructions and the choice of examples matter; performance cannot be inferred from prompt length or wording alone [R7, R8].
 
-The supplied lecture document, *Theories: South African, Chinese, Mexican, Filipino Approaches*, contrasts **emic** (within-cultural) and **etic** (cross-cultural comparative) approaches; discusses SAPI and CPAI; and introduces Filipino concepts including *kapwa* and *pakikiramdam*. It illustrates limitations of projecting one cultural model of personality, individualism, assertiveness, or interpersonal communication onto everyone.
+For our project, this supports writing a clear annotation guideline, testing a simple prompt before adding examples, and evaluating each version on cases not included in the instructions. We should not assume that more examples will always improve results.
 
-**Design implication:** Add adversarial examples where the apparent “best” response changes depending on the client's stated preferences. Do not encode statements such as “people from culture X avoid directness” as facts about individuals. This document is educational background and does **not** validate a counseling classifier or its categories.
+## 2. Proposed CMO criteria
 
-### 1.4 LLM prompting and text classification — relevant methodology
+The proposed unit of analysis is a **client cue**, the relevant **counselor response**, and enough surrounding conversation to interpret that response. Looking only at the counselor's sentence may miss a later follow-up or an agreed reason to change topics.
 
-Anthropic's prompting guidance favors **specific, direct instructions**, clearly separated context/definitions/examples, and an explicit expected response format [R5]. Its structured outputs feature helps constrain JSON shape, but a syntactically valid JSON answer can still be conceptually wrong [R6]. A 2026 comparison of LLM-based text coding finds that the *substantive content* of a codebook matters more reliably than cosmetic prompt formulations, though results are task- and model-dependent [R7]. Few-shot studies also show that more demonstrations are not automatically better across models or tasks [R8].
+A strongly supported potential CMO would require all of the following:
 
-**Design implication:** Test a definition-only baseline first; then add a small, balanced set of approved positive **and negative** examples. Hold out distinct evaluation cases. Track prompt/model versions, class-specific errors, output validity, and costs. Avoid unverified claims of “80% accuracy” or “research-proven prompting.”
+1. **Client cue:** The client raises a cultural or identity-related experience as meaningful, distressing, or relevant to the conversation. Do not infer an identity from a name, accent, or other indirect signal.
+2. **Opportunity for response:** The cue creates a plausible opening for acknowledgment or further discussion.
+3. **Apparent omission:** The counselor does not meaningfully acknowledge, explore, or intentionally defer the issue within the available context.
+4. **Transcript evidence:** The assessment can point to specific client and counselor turns and explain why the response may be a missed opportunity.
 
-## 2. Provisional construct definition and boundaries
+Evidence against flagging includes a relevant open-ended response, appropriate follow-up later in the conversation, the client's choice not to discuss the topic, a previously agreed agenda, or an urgent concern requiring redirection. If the necessary response or context is missing, the result should indicate insufficient evidence rather than assume a missed opportunity.
 
-**Proposed unit of analysis:** One *client cue*, the counselor's relevant response, and enough nearby turns to identify whether the response acknowledges, explores, deliberately defers, or appropriately redirects the topic. The client cue is necessary to support a missed-opportunity finding; a therapist sentence by itself is not enough.
+**Scope still needs clarification.** The partner has also mentioned personal characteristics such as physical or personality traits. We need to ask whether these fall under the intended CMO category, require a separate category, or are part of a broader definition of missed opportunities. The current criteria focus on cultural and identity-related cues until that decision is made.
 
-**Draft inclusion conditions (all required for a supported potential CMO):**
+## 3. Instructions and example files
 
-1. **Evidence of a cue:** Exact client words introduce an identity-related or cultural experience *as meaningful or potentially relevant* to a current concern. Do not infer identity from a name, location, accent, or appearance alone.
-2. **Plausible opening:** The cue provides a reasonable opening for acknowledgement or collaborative exploration in the local conversation.
-3. **Potential nonresponse:** The therapist's relevant response and available following context show no meaningful acknowledgement, invitation, or mutually understood deferral.
-4. **Evidence-backed rationale:** The model can cite both specific turn indices and exact transcript evidence, and can acknowledge a plausible alternative interpretation.
+The accompanying files are:
 
-**Conditions that weigh against a flag:** Follow-up in later turns; client explicitly declines to discuss topic; therapist's open question meaningfully follows the concern; an agreed agenda; urgent safety prioritization; a neutral identity mention lacking relevance. Missing therapist responses should usually be `insufficient_evidence` rather than presumed failures.
+- `classification/cmo-system-prompt-v0.1.md` — proposed classification task, criteria, decision rules, and response requirements.
+- `classification/examples.json` — 12 synthetic conversations with provisional expected labels, including clear, negative, ambiguous, and insufficient-context cases.
+- `docs/cmo-annotation-guideline.md` — a fuller explanation of the criteria and cases that need counselor review.
 
-**Unresolved construct-scope question:** The partner's reported description may include physical and personality traits in addition to culture/identity. This brief does not silently redefine CMO to include all personal characteristics. Have advisors specify whether such cases belong to CMO, a separate category, or an explicitly broader project-specific construct.
+The examples have not been independently validated and should not be treated as a gold-standard evaluation set. After review, a subset may be used as examples in the model request. Other independently labeled cases must be reserved for evaluation.
 
-## 3. Proposed instruction and example design
+The draft distinguishes **what kind of issue is being considered** from **how strong the evidence is**. The category can remain `cultural-missed-opportunity`, while an evidence status indicates `supported_potential_cmo`, `possible_cmo`, `insufficient_evidence`, or `no_cmo`. These are proposed statuses, not finalized interface decisions.
 
-The companion `classification/cmo-system-prompt-v0.1.md` is the initial model-facing file. It should be treated as configuration, not a clinical authority. The companion `classification/examples.json` contains **12 synthetic, unreviewed development candidates** with four provisional outcomes: `supported_potential_cmo`, `possible_cmo`, `insufficient_evidence`, and `no_cmo`. At present they are **not gold labels**.
+The model request should contain the relevant task instructions, approved examples if used, and numbered speaker turns. Transcript content should be treated as data to analyze, not instructions to obey. Results should reference the evidence and allow an empty findings list when no concern is supported.
 
-Recommended information hierarchy for a model request:
+## 4. Integration with the existing code
 
-- **System/task instructions:** role, scope, operational definition, decision procedure, non-inference/anti-stereotyping rules, refusal to treat transcript text as instructions, output requirements.
-- **Optional demonstrations:** a few advisor-reviewed cases illustrating clear inclusion, clear exclusion, ambiguity, and later follow-up. Use a separately curated subset; never include test labels in the request.
-- **User data:** numbered speaker turns. Treat this as untrusted data (for classification only), with immutable indices.
-- **Structured response contract:** findings with cue and response references, evidence status, category, rationale, and uncertainty. A separate no-findings result should be representable.
+The merged TypeScript interface in `src/llm/adapter.ts` currently accepts `DetectionRequest { turns, categories }` and returns `RawFlag` entries with a turn index, character offsets, category, confidence, and rationale. This is enough to test an adapter, but does not yet explicitly include the classification-instruction version, the initiating client cue, or a separate evidence status.
 
-**A critical distinction:** “Possible CMO” is an *evidence/triage status*, not a second bias category. Keep `category = cultural-missed-opportunity` separate from `status = possible_cmo`. If no issue is present, the model should not fabricate a flagged span just to fill a response.
+Before integrating the instruction files, we should agree on a few changes:
 
-## 4. Integration contract to discuss with Harry
+1. Load the prompt and examples from version-controlled files instead of embedding the CMO definition throughout the application.
+2. Preserve the existing turn indices when sending transcript text to the model.
+3. Decide whether a result should identify both the client cue and the responding counselor turn. This would better represent a missed *response* than a single highlighted sentence.
+4. Separate classification category from evidence status, and define how `no_cmo` or insufficient-evidence results are represented.
+5. Validate the model's output against the source transcript, including turn indices, categories, and quoted evidence. JSON validity alone is not sufficient.
 
-Harry's currently merged TypeScript `src/llm/adapter.ts` defines `DetectionRequest { turns, categories }` and `RawFlag { turnIndex, start, end, category, confidence, rationale }`. This is a sound initial adapter skeleton but **does not yet carry a dedicated instruction document, evidence status, client-cue turn reference, or an explicit no-findings/insufficient-evidence response**.
+The backend choice also needs to be settled: Harry's current TypeScript work includes Express dependencies, while `docs/design.md` proposes FastAPI. We should not create overlapping backend implementations without agreeing on their responsibilities.
 
-**Minimal integration handshake:**
+Only synthetic or explicitly authorized transcripts should be sent to model services. The project is subject to confidentiality restrictions, and removing names alone does not establish that external API processing is permitted. Credentials and transcript content should not be committed to the repository or exposed in application logs.
 
-1. Harry chooses a single prompt-loading location in the application and records `prompt_version`. Jack supplies versioned text; the client code never hardcodes CMO rules.
-2. Harry serializes `Turn[]` with immutable 0-based indices and separately passes the category codebook and optional reviewed examples. Do not expose API keys in prompts, logs, frontend, or GitHub.
-3. Both agree on a richer result shape, such as `AnalysisResult { promptVersion, findings[] }`, with each finding containing `clientCueTurnIndex`, `therapistTurnIndex`, `category`, `evidenceStatus`, `rationale`, and `alternativeInterpretation`. Keep offsets optional until the exact highlighted span is defensible. This is **proposed**, not implemented.
-4. The backend verifies indices, exact quoted evidence, valid category IDs and status values; rejects malformed responses; logs *metadata only* where permitted. Structured JSON enforcement does not validate the clinical reasoning.
-5. Decide whether Express/TypeScript or FastAPI/Python is the team's first backend. `main` uses TypeScript adapter work and Express dependencies while the updated design proposes FastAPI. Avoid adding two redundant API stacks without a documented reason.
+## 5. Evaluation plan
 
-**Security boundary:** This project's repository identifies it as subject to NDA restrictions. Only synthetic or **explicitly authorized** transcripts may be supplied to third-party models. De-identification alone does not prove that an external API call is permitted. Do not embed original transcripts in test fixtures, issues, or model logs.
+**First, review the annotation guideline.** Two reviewers, ideally including counseling advisors, should label the same initial set of varied examples independently and explain disagreements. The goal is to discover unclear criteria before treating the labels as ground truth. The team can record agreement rates and decide whether a more formal agreement measure is useful once the sample is defined.
 
-## 5. Proposed evaluation protocol
+**Next, compare instruction variants.** Using the same model settings and development cases, test (A) the definition alone, (B) the definition with a balanced set of positive and negative examples, and (C) the same material with additional rules for ambiguity and delayed follow-up. Record the prompt version, model, outputs, classification errors, response validity, latency, and costs where available.
 
-**Phase A — annotation agreement before model tuning:** Present a varied set of synthetic candidate conversations to at least two advisors or qualified reviewers. Ask for independent labels, the decisive client cue/therapist response, and a brief reason. Measure percentage agreement and a chance-adjusted agreement statistic where appropriate; do not assert a magic reliability threshold without advisor agreement. Resolve disagreements by revising the codebook, not by silently changing “correct” labels after viewing model predictions.
+**Finally, evaluate on held-out cases.** These cases should not appear in the prompt or be used to select its wording. Report precision and recall, with the number of positive and negative cases used to calculate them. The team must agree in advance whether `possible_cmo` counts as a positive flag and how insufficient-evidence results are scored. Review errors involving appropriate acknowledgment, neutral identity mentions, delayed follow-up, and missing context.
 
-**Phase B — fixed, reproducible prompt comparison:** Establish two separate collections: development examples (available for prompt construction) and held-out evaluation examples (never placed into the prompt). Compare three configurations under the same model and parameters: (A) definition only; (B) definition + balanced worked examples; (C) B plus explicit ambiguity and delayed-follow-up rules. Save the exact prompt version, model identifier, test IDs, outputs, malformed outputs, elapsed time and costs if available.
+We have not established acceptable numerical thresholds for precision, recall, annotation agreement, or dataset size. Those are decisions for the team and advisors before formal evaluation. Twelve synthetic examples are useful for developing instructions but cannot establish that the classifier is reliable for counseling use.
 
-**Phase C — report failures honestly:** Report true/false positives and negatives under a *pre-agreed* binary mapping; `possible_cmo` and `insufficient_evidence` need explicit handling rather than being silently assigned positive or negative. Report precision and recall with denominators and error examples. Check false positives on culturally neutral statements, open-ended acknowledgments, crisis redirections, and transcripts missing later context. Run the same cases after every prompt change to catch regressions.
+If the model performs poorly, the first step should be to inspect the errors and the annotation criteria. Fine-tuning is not a substitute for a definition that reviewers themselves cannot apply consistently.
 
-**Stop/decision conditions:** Do not claim a clinical classifier is validated based on 12 synthetic cases. A useful initial milestone is a reviewed definition, versioned prompt, examples, interface proposal, and documented test plan. Ask advisors how many cases and what agreement thresholds are needed before trial use. If experts cannot agree on the label, revisit the category rather than fine-tune a model on disputed data.
+## 6. Documents and review responsibilities
 
-## 6. Project artifacts, ownership, and review criteria
+| File | Purpose | Review needed |
+| --- | --- | --- |
+| `docs/cmo-annotation-guideline.md` | Defines potential CMOs and exclusions | Counselors confirm the intended scope and criteria |
+| `classification/cmo-system-prompt-v0.1.md` | Gives the model the classification task and output instructions | Engineering review for integration; counselor review of decision rules |
+| `classification/examples.json` | Provides synthetic cases and provisional labels | Check labels, ambiguity, and JSON structure |
+| `docs/cmo-research-and-implementation.md` | Records the research basis, interface questions, and test plan | Team review of sources and planned decisions |
 
-These artifacts define a maintainable classification specification independently of the chosen LLM provider. All documents are **provisional** until reviewed by the team and counseling advisors.
+The classification guidelines and integration code can be developed in parallel, but the request and response structure must be agreed upon together. Tests of the existing fake adapter confirm software behavior, not the accuracy of the CMO classifications.
 
-| Artifact | Repository location | Purpose | Review criteria |
-|---|---|---|---|
-| Operational CMO guideline | `docs/cmo-annotation-guideline.md` | Inclusion/exclusion criteria, ambiguous cases, scope questions | Advisor/team verifies construct boundaries and flags disputed criteria |
-| Model-facing instructions | `classification/cmo-system-prompt-v0.1.md` | Versioned prompt instructions | Engineer verifies prompt can be loaded without embedding rules in application logic |
-| Synthetic development cases | `classification/examples.json` | 12 candidate cases, provisional expected statuses | JSON parses; positive, negative and uncertain examples represented; no protected data |
-| Research and implementation brief | `docs/cmo-research-and-implementation.md` | Sources, interface decisions and experimental plan | Research claims checked, output contract decisions recorded |
+## 7. Questions for the next review
 
-**Proposed GitHub issue:** `Define and review CMO classification specification and synthetic examples`. It can be closed when the documents have been reviewed, example JSON validates, construct questions are tracked, and any revisions are documented. Review/approval is not implied by the existence of these files.
+**For counseling advisors:**
 
-**Suggested walkthrough for teammates:** Open the guideline; compare a positive and negative example; inspect the prompt's evidence requirements; map the required output fields to `DetectionRequest` and `RawFlag`; document the pending advisor decisions. A passing fake-adapter unit test is an infrastructure test, not proof of model accuracy.
+1. Are we detecting cultural missed opportunities specifically, or a broader class that includes other personal characteristics?
+2. When is simple acknowledgment sufficient, and when should a counselor explicitly invite further discussion?
+3. How should we interpret a concern that is addressed several turns later?
+4. Should ambiguous cases be shown separately from more strongly supported potential misses?
+5. Can advisors independently label an initial set of synthetic cases and help determine what evaluation standard is appropriate?
 
-**Ownership boundary:** The model-specification owner maintains the codebook, instructions, example labels, and evaluation plan. The model-integration owner maintains the API adapter and validates its output. Both jointly decide the request/response contract. Neither a draft document nor a model response alone establishes counselor acceptance or clinical validity.
+**For the development team:**
 
-## 7. Questions to resolve with counselors and the development team
+6. Are we implementing the first backend in TypeScript/Express or Python/FastAPI?
+7. Should each finding reference both the client's cue and the counselor's response?
+8. How will the instruction files be loaded and versioned, and who will maintain the output schema?
+9. What transcript data is authorized for API-based testing?
 
-**Clinical/advisor questions**
+## References
 
-1. Is the intended construct the research-based *cultural missed opportunity*, or a broader *client-signaled personal-characteristic missed opportunity*? Which explicit types of cues are in scope?
-2. When is reflective acknowledgment sufficient, and when is an invitation to discuss the identity-related significance expected?
-3. How many subsequent turns may count as a legitimate delayed follow-up? Does the absence of later context force `insufficient_evidence`?
-4. Should the team flag plausible cases with substantial alternative explanations, or show those as separate “possible review” results?
-5. Can advisors independently annotate 10–20 synthetic excerpts and record points of disagreement? What agreement threshold and minimum gold-set size would they accept?
+[R1] Owen, J., et al. (2016). *Client perceptions of therapists' multicultural orientation: Cultural (missed) opportunities and cultural humility.* *Professional Psychology: Research and Practice, 47*(1), 30–37. https://doi.org/10.1037/pro0000046
 
-**Engineering/team questions**
+[R2] Davis, D. E., et al. (2018). *The multicultural orientation framework: A narrative review.* https://pubmed.ncbi.nlm.nih.gov/29565626/
 
-6. Is Harry retaining TypeScript/Express for the model service, or is FastAPI the agreed backend? Who approves an interface change?
-7. Will a finding reference a *therapist response*, *client cue*, or both? How should repeated or delayed missed opportunities be represented?
-8. Does the client/partner authorize any de-identified transcript processing by Claude, or should the team use synthetic data only until approval is documented?
-9. Who will review and maintain the classification specification after the initial pull request?
+[R3] Hook, J. N., et al. (2013). *Cultural humility: Measuring openness to culturally diverse clients.* https://pubmed.ncbi.nlm.nih.gov/23647387/
 
-## References and verification status
+[R4] Anders, C., et al. (2020). *Attending to the intersectionality and saliency of clients' identities: A further investigation of therapists' multicultural orientation.* https://pubmed.ncbi.nlm.nih.gov/33090873/
 
-- **[R1]** Owen, J., et al. (2016). *Client perceptions of therapists' multicultural orientation: Cultural (missed) opportunities and cultural humility.* *Professional Psychology: Research and Practice, 47*(1), 30. https://doi.org/10.1037/pro0000046 — **Primary empirical study; client-perceived outcomes, not automated transcript annotation.**
-- **[R2]** Davis, D. E., et al. (2018). *The multicultural orientation framework: A narrative review.* https://pubmed.ncbi.nlm.nih.gov/29565626/ — Framework-level review; not a prescriptive label codebook.
-- **[R3]** Hook, J. N., et al. (2013). *Cultural humility: Measuring openness to culturally diverse clients.* https://pubmed.ncbi.nlm.nih.gov/23647387/ — Research on client-perceived humility and alliance.
-- **[R4]** Anders, C., et al. (2020). *Attending to the intersectionality and saliency of clients' identities: A further investigation of therapists' multicultural orientation.* https://pubmed.ncbi.nlm.nih.gov/33090873/ — Identity-salience research; no implication that identity alone mandates follow-up.
-- **[R5]** Anthropic. *Prompting best practices.* https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices — Current technical guidance; implementation details may change.
-- **[R6]** Anthropic. *Structured outputs.* https://platform.claude.com/docs/en/build-with-claude/structured-outputs — Structured JSON constraints, not semantic validation.
-- **[R7]** *Much Ado about Prompting: LLM classification of text messages from experiments* (2026). https://pmc.ncbi.nlm.nih.gov/articles/PMC13436748/ — Non-clinical classification comparison; do not generalize effect sizes to CMO.
-- **[R8]** *When Does Few-Shot Prompting Help? A Systematic Empirical Study of Shot-Count Effects Across Model Scale, Architecture, and Output Parsing Robustness* (2026). https://arxiv.org/abs/2607.22969 — Model/task-specific findings; use as reason to test, not as a fixed prescription.
-- **[R9]** Course material supplied by project member: *Theories: South African, Chinese, Mexican, Filipino Approaches* (course slides, Fall 2026). **Background only; not a validated counseling guideline.**
+[R5] Anthropic. *Prompting best practices.* https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
 
-**Research limitation:** These sources support the rationale and research plan. This document does not claim a literature-validated computational definition of CMO, verified model accuracy, or advisor endorsement. Obtain full texts and the actual Cultural Missed Opportunities Measure (subject to access/licensing) before formalizing the construct.
+[R6] Anthropic. *Structured outputs.* https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+
+[R7] *Much Ado about Prompting: LLM classification of text messages from experiments* (2026). https://pmc.ncbi.nlm.nih.gov/articles/PMC13436748/
+
+[R8] *When Does Few-Shot Prompting Help? A Systematic Empirical Study of Shot-Count Effects Across Model Scale, Architecture, and Output Parsing Robustness* (2026). https://arxiv.org/abs/2607.22969
+
+[R9] *Theories: South African, Chinese, Mexican, Filipino Approaches.* Course slides supplied for the project (2026). Background material, not a validated CMO instrument.
