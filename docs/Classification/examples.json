@@ -1,0 +1,122 @@
+[
+  {
+    "id": "CMO-001",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "supported_potential_cmo",
+    "transcript": "Client: People make fun of my accent at work.\nTherapist: Are you getting enough sleep?",
+    "annotation_rationale": "Explicit experience of language-related exclusion redirected without acknowledgment.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-002",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "no_cmo",
+    "transcript": "Client: People make fun of my accent at work.\nTherapist: Would you like to talk about what that has been like?",
+    "annotation_rationale": "Therapist invites exploration of the client-specific experience.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-003",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "possible_cmo",
+    "transcript": "Client: My family does not understand my religious choices.\nTherapist: That sounds hard. What happened this week?",
+    "annotation_rationale": "Empathy and an open question are present; follow-up may or may not explore the concern.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-004",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "insufficient_evidence",
+    "transcript": "Client: I feel excluded when my family speaks a language I do not know.",
+    "annotation_rationale": "Therapist response is unavailable.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-005",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "no_cmo",
+    "transcript": "Client: I am from Brazil.\nTherapist: What brought you to counseling today?",
+    "annotation_rationale": "Nationality alone does not establish a meaningful missed cue.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-006",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "supported_potential_cmo",
+    "transcript": "Client: I wanted to talk about being treated differently because of my disability.\nTherapist: We should focus on your productivity instead.",
+    "annotation_rationale": "The client explicitly requests exploration and therapist dismisses the topic in the available exchange.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": true
+  },
+  {
+    "id": "CMO-007",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "no_cmo",
+    "transcript": "Client: My parents expect me to support the extended family.\nTherapist: What does that responsibility mean to you personally?",
+    "annotation_rationale": "Client-centered exploration without stereotyping.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-008",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "possible_cmo",
+    "transcript": "Client: I cannot tell my parents that I disagree with them.\nTherapist: What would you like to do about that?",
+    "annotation_rationale": "Potential context-dependent communication concern, but not enough evidence of a missed identity-related opportunity.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-009",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "no_cmo",
+    "transcript": "Client: I have been worried about exams.\nTherapist: What feels hardest about preparing?",
+    "annotation_rationale": "Ordinary clinical exploration; no identity-related cue established.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-010",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "insufficient_evidence",
+    "transcript": "Client: I felt judged for wearing a head covering.\nTherapist: We can come back to that later.",
+    "annotation_rationale": "Follow-through unavailable, so cannot determine whether follow-up occurs.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  },
+  {
+    "id": "CMO-011",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "possible_cmo",
+    "transcript": "Client: People assume things about me because of my appearance.\nTherapist: Tell me more about how school has been.",
+    "annotation_rationale": "Identity/appearance cue may be relevant, but open question may continue the same topic.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": true
+  },
+  {
+    "id": "CMO-012",
+    "split": "development_candidate",
+    "review_status": "synthetic_unreviewed",
+    "expected_status_provisional": "no_cmo",
+    "transcript": "Client: I do not want to discuss my immigration history today.\nTherapist: Okay. We can focus on what feels useful now.",
+    "annotation_rationale": "Therapist respects an explicit preference not to explore.",
+    "category_id": "cultural-missed-opportunity",
+    "scope_review_required": false
+  }
+]
